@@ -13,6 +13,7 @@ int yywrap(void)
 "["     return LB;
 "]"     return RB;
 "."     return DOT;
+".."    return DOTDOT;
 ","     return COMMA;
 ":"     return COLON;
 "*"     return MUL;
@@ -28,6 +29,17 @@ int yywrap(void)
 "<"     return ASSIGN;
 "~"     return NOT;
 ";"     return SEMI;
+"begin" return BEGIN;
+"end"   return END:
+"var"   return VAR;
+"boolean"   return BOOLEAN;
+"char"  return CHAR;
+"integer" return INTEGER;
+"real"  return REAL;
+"false" return FALSE;
+"true"  return TRUE;
+"maxint"    return MAXINT;
+"type"  return TYPE;
 
 [0-9]+ {
     yylval.int_value = atoi(yytext);
@@ -42,6 +54,11 @@ int yywrap(void)
 \"(\\.|[^"\\])*\" {
     yylval.string_value = yytext;
     return STRING_LITERAL;
+}
+
+\'(.)\' {
+    yylval.char_value = yytext;
+    return CHAR_LITERAL;
 }
 
 "function" return FUNCTION;
