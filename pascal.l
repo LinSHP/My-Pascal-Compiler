@@ -42,6 +42,11 @@ int yywrap(void)
 "type"  return TYPE;
 "to"    return TO;
 "downto"    return DOWNTO;
+"else"  return ELSE;
+"read"  return READ;
+"repeat"    return REAPEAT;
+"then"  return THEN;
+"until" return UNTIL;
 
 [a-zA-Z]([a-zA-Z0-9_])* {
 	yylval.sval = yytext
