@@ -26,7 +26,7 @@ int yywrap(void)
 "<"     return LT;
 "="     return EQUAL;
 "!="    return UNEQUAL;
-"<"     return ASSIGN;
+":="     return ASSIGN;
 "~"     return NOT;
 ";"     return SEMI;
 "begin" return BEGIN;
@@ -40,6 +40,13 @@ int yywrap(void)
 "true"  return TRUE;
 "maxint"    return MAXINT;
 "type"  return TYPE;
+"to"    return TO;
+"downto"    return DOWNTO;
+
+[a-zA-Z]([a-zA-Z0-9_])* {
+	yylval.sval = yytext
+    return ID;
+}
 
 [0-9]+ {
     yylval.int_value = atoi(yytext);
