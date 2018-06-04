@@ -77,7 +77,7 @@ enum class Type : int{
 enum class OpType: int {
     plus, minus, mul, div, mod,
     eq, ne, lt, gt, le, ge,
-    AND, OR, NOT,
+    OP_AND, OP_OR, OP_NOT,
 };
 
 static map<OpType, string> opString = {
@@ -92,9 +92,9 @@ static map<OpType, string> opString = {
         {OpType::gt, ">"},
         {OpType::le, "<="},
         {OpType::ge, ">="},
-        {OpType::AND, "and"},
-        {OpType::OR, "or"},
-        {OpType::NOT, "not"},
+        {OpType::OP_AND, "and"},
+        {OpType::OP_OR, "or"},
+        {OpType::OP_NOT, "not"},
 };
 
 enum class RoutineType {
@@ -215,7 +215,7 @@ public:
     }
 
     string repr() override {
-        return "char: " + literal;
+        return "char: " + string(1, literal);
     }
 };
 
