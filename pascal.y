@@ -86,27 +86,29 @@ routine:
     routine_head    routine_body    {
         $$ = $1;
         $$->routineBody = $2;
+        $$->addChild($2);
     }
     ;
 routine_head:
     label_part  const_part  type_part   var_part    routine_part    {
         $$ = new Program($1, $2, $3, $4, $5, nullptr);
-        cout<<$5->repr()+"2333"<<endl;
     }
     ;
 routine_part:
-    routine_part    function_decl   { $$->addChild($2); }
-    | routine_part  procedure_decl  { $$->addChild($2); }
-    | { $$ = new RoutineList(); }
+    routine_part    function_decl   { $$->addChild($2);}
+    | routine_part  procedure_decl  { $$->addChild($2);}
+    | { $$ = new RoutineList();}
     ;
 function_decl:
     function_head   SEMI    routine SEMI    {
         $$ = new Routine($1, $3);
+        // cout<<"function head"<<endl;
     }
     ;
 function_head:
     FUNCTION    ID  parameters  COLON   simple_type_decl    {
         $$ = new Routine(RoutineType::function, new Identifier($2), $3, $5);
+        cout<<"function head"<<endl;
     }
     ;
 procedure_decl:
@@ -120,26 +122,28 @@ procedure_head:
     }
     ;
 parameters:
-    LP  para_decl_list  RP  { $$ = $2; }
+    LP  para_decl_list  RP  { $$ = $2; cout<<22<<endl;}
     |      { $$ = new VarDeclList(); }
     ;
 para_decl_list:
-    para_decl_list  SEMI    para_type_list  { $$->addChild($3); }
-    | para_type_list    { $$ = new VarDeclList($1); }
+    para_decl_list  SEMI    para_type_list  { $$->addChild($3); cout<<44<<endl;}
+    | para_type_list    { $$ = new VarDeclList($1); cout<<33<<endl;}
     ;
 para_type_list:
     var_para_list COLON simple_type_decl    {
         $$ = new VarDecl($1, $3);
+        cout<<55<<endl;
     }
     | val_para_list COLON simple_type_decl  {
         $$ = new VarDecl($1, $3);
+        cout<<66<<endl;
     }
     ;
 var_para_list:
-    VAR name_list   { $$ = $2; };
+    VAR name_list   { $$ = $2; cout<<77<<endl;};
     ;
 val_para_list:
-    name_list   { $$ = $1; }
+    name_list   { $$ = $1; cout<<88<<endl;}
     ;
 var_part:
     VAR var_decl_list   { $$ = $2; }
@@ -208,7 +212,7 @@ array_type_decl:
     }
     ;
 simple_type_decl:
-    SYS_TYPE  { $$ = new TypeDecl($1); }  //这里的SYS_TYPE和NAME还是有问题的
+    SYS_TYPE  { $$ = new TypeDecl($1); cout<<"123"<<endl}  //这里的SYS_TYPE和NAME还是有问题的
     | NAME  { $$ = new TypeDecl($1); }
     | LP name_list RP   {} //enum 先不写
     | INT_LITERAL   DOTDOT  INT_LITERAL { $$ = new TypeDecl(new RangeType($1, $3)); }
@@ -217,8 +221,8 @@ simple_type_decl:
     | NAME  DOTDOT NAME { $$ = new TypeDecl(new RangeType($1, $3)); }
     ;
 name_list:
-    name_list   COMMA   ID  { $$->addChild(new Identifier($3)); }
-    | ID    { $$ = new NameList(new Identifier($1)); }
+    name_list   COMMA   ID  { $$->addChild(new Identifier($3)); cout<<77<<endl;}
+    | ID    { $$ = new NameList(new Identifier($1)); cout<<88<<endl;}
     ;
 compound_stmt:
     START   stmt_list   END { $$ = $2;}
@@ -354,6 +358,70 @@ int yyerror(char const *str)
         return 0;
 }
 
+void printPascalTree(Node *tree){
+    cout<<"now print tree"<<endl;
+    if (tree == NULL)
+        return;
+    queue<Node *> nodeQueue;
+    nodeQueue.push(tree);
+    while (nodeQueue.size()){
+        Node *nowNode = nodeQueue.front();
+        cout<< nowNode->repr()<<"-> ";
+        nodeQueue.pop();
+        for (int i=0; i < nowNode->children.size(); i++){
+            if (nowNode->children[i]!=NULL){
+                cout<<nowNode->children[i]->repr()<<" ";
+                nodeQueue.push(nowNode->children[i]);
+            }
+            
+        }
+        cout<<endl;
+    }
+}
+
+string printTree2(Node *tree, int indent){
+    string res="";
+    if (tree!=NULL){
+        for (int i=0; i<indent;i++){
+            res+='\t';
+        }
+        if (tree->children.size()==0){
+            res+="\""+tree->repr()+"\":{}\n";
+            return res;
+        }
+        res+="\""+tree->repr()+"\":{\n";
+        // cout<<tree->repr()<<endl;
+        for (int i=0; i < tree->children.size(); i++){
+            if (tree->children[i]!=NULL){
+                if (i!=tree->children.size()-1)
+                    res+=printTree2(tree->children[i], indent+1)+",";
+                else
+                    res+=printTree2(tree->children[i], indent+1);
+            }
+        }
+        res+="}";
+    }
+    return res;
+}
+
+
+void printTreet(Node *tree, int indent){
+    if (tree!=NULL){
+        // cout<<tree->children.size();
+        for (int i=0; i<indent;i++){
+            cout<<'\t';
+        }
+        cout<<tree->repr()<<endl;
+        for (int i=0; i < tree->children.size(); i++){
+            // cout<<"1 ";
+            if (tree->children[i]!=NULL){
+                printTreet(tree->children[i], indent+1);
+            }
+        }
+        
+    }
+}
+
 int main(void)
 {
         extern int yyparse(void);
@@ -363,6 +431,10 @@ int main(void)
                 fprintf(stderr, "Error!\n");
                 exit(1);
         }
-        tree->printPascalTree(tree);
+        // printPascalTree(tree);
+        // printTreet(tree, 0);
+        cout<<"{"+printTree2(tree,0)+"}";
 }
+
+
 

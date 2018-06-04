@@ -9,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include <queue>
+#include <map>
 //#include <llvm/IR/Value.h>
 //#include <llvm/IR/Instructions.h>
 
@@ -114,29 +115,31 @@ public:
     virtual void addChild(Node* node) {
         children.push_back(node);
     }
-    virtual void printPascalTree(Node *tree){
-        cout<<"now print tree"<<endl;
-        if (tree == NULL)
-            return;
-        queue<Node *> nodeQueue;
-        nodeQueue.push(tree);
-        while (nodeQueue.size()){
-            Node *nowNode = nodeQueue.front();
-            cout<< nowNode->repr()<<endl;
-            nodeQueue.pop();
-            cout<<nowNode->children.size()<<endl;
-            for (int i=0; i < nowNode->children.size(); i++){
-                if (nowNode->children[i]!=NULL){
-                    cout<<nowNode->children[i]->repr()<<endl;
-                    nodeQueue.push(nowNode->children[i]);
-                    cout<<nodeQueue.size()<<endl;
-                }
+    // virtual void printPascalTree(Node *tree){
+    //     cout<<"now print tree"<<endl;
+    //     if (tree == NULL)
+    //         return;
+    //     queue<Node *> nodeQueue;
+    //     nodeQueue.push(tree);
+    //     while (nodeQueue.size()){
+    //         Node *nowNode = nodeQueue.front();
+    //         cout<< nowNode->repr()<<endl;
+    //         nodeQueue.pop();
+    //         // cout<<nowNode->children.size()<<endl;
+    //         for (int i=0; i < nowNode->children.size(); i++){
+    //             if (nowNode->children[i]!=NULL){
+    //                 cout<<nowNode->children[i]->repr()<<endl;
+    //                 nodeQueue.push(nowNode->children[i]);
+    //                 // cout<<nodeQueue.size()<<endl;
+    //             }
                 
-            }
-            cout<<endl;
-            cout<<endl;
-        }
-    }
+    //         }
+    //         // cout<<endl;
+    //         cout<<endl;
+    //     }
+    // }
+
+
 };
 
 
