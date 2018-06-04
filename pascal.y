@@ -313,14 +313,14 @@ expression:
 expr: 
     expr  PLUS  term  {$$ = new BinaryOperator(OpType::plus, $1, $3); }
     | expr  MINUS  term  {$$ = new BinaryOperator(OpType::minus, $1, $3); }
-    | expr  OR  term  {$$ = new BinaryOperator(OpType::OR, $1, $3); }
+    | expr  OR  term  {$$ = new BinaryOperator(OpType::OP_OR, $1, $3); }
     | term { $$ = $1; }
     ;
 term: 
     term  MUL  factor  {$$ = new BinaryOperator(OpType::mul, $1, $3); }
     | term  DIV  factor  {$$ = new BinaryOperator(OpType::div, $1, $3); }
     | term  MOD  factor  {$$ = new BinaryOperator(OpType::mod, $1, $3); }
-    | term  AND  factor  {$$ = new BinaryOperator(OpType::AND, $1, $3); }
+    | term  AND  factor  {$$ = new BinaryOperator(OpType::OP_AND, $1, $3); }
     | factor { $$ = $1; }
     ;
 factor: 
@@ -330,7 +330,7 @@ factor:
     | SYS_FUNCT  LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
     | const_value  { $$ = $1; }
     | LP  expression  RP { $$ = $2; }
-    | NOT  factor  { $$ = new UnaryOperator(OpType::NOT, $2); }
+    | NOT  factor  { $$ = new UnaryOperator(OpType::OP_NOT, $2); }
     | MINUS  factor  {
                     $$ = new UnaryOperator(OpType::minus, $2);
                     }
