@@ -55,3 +55,8 @@ cmake-build-debug
 .idea
 .vscode
 CMakeLists.txt
+pascal
+pascal.cpp
+pascal.hpp
+pascal.output
+tokens.cpp

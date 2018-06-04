@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+#include <queue>
 //#include <llvm/IR/Value.h>
 //#include <llvm/IR/Instructions.h>
 
@@ -113,7 +114,32 @@ public:
     virtual void addChild(Node* node) {
         children.push_back(node);
     }
+    void printPascalTree(Node *tree){
+        cout<<"now print tree"<<endl;
+        if (tree == NULL)
+            return;
+        queue<Node *> nodeQueue;
+        nodeQueue.push(tree);
+        while (nodeQueue.size()){
+            Node *nowNode = nodeQueue.front();
+            cout<< nowNode->repr()<<endl;
+            nodeQueue.pop();
+            cout<<nowNode->children.size()<<endl;
+            for (int i=0; i < nowNode->children.size(); i++){
+                if (nowNode->children[i]!=NULL){
+                    cout<<nowNode->children[i]->repr()<<endl;
+                    nodeQueue.push(nowNode->children[i]);
+                    cout<<nodeQueue.size()<<endl;
+                }
+                
+            }
+            cout<<endl;
+            cout<<endl;
+        }
+    }
 };
+
+
 
 // Expression的根节点
 class Expression: public Node {
@@ -224,7 +250,10 @@ public:
     Identifier *recordName, *fieldName;
 
     RecordRef(Identifier* recordName, Identifier* fieldName): recordName(recordName),
-                                                              fieldName(fieldName) {}
+                                                              fieldName(fieldName) {
+                                                                  addChild(recordName);
+                                                                  addChild(fieldName);
+                                                              }
 
     string repr() override {
         return recordName->repr() + "." + fieldName->repr();
@@ -236,7 +265,10 @@ public:
     Identifier* arrayName;
     Expression* index;
 
-    ArrayRef(Identifier* arrayName, Expression* index): arrayName(arrayName), index(index) {}
+    ArrayRef(Identifier* arrayName, Expression* index): arrayName(arrayName), index(index) {
+        addChild(arrayName);
+        addChild(index);
+    }
 
     string repr() override {
         return arrayName->repr() + "[" + index->repr() + "]";
@@ -248,7 +280,9 @@ public:
     OpType op;
     Expression* operand;
 
-    UnaryOperator(OpType op, Expression* operand): op(op), operand(operand) {}
+    UnaryOperator(OpType op, Expression* operand): op(op), operand(operand) {
+        addChild(operand);
+    }
 
     string repr() override {
         return opString[op] + operand->repr();
@@ -260,7 +294,10 @@ public:
     OpType op;
     Expression *operand1, *operand2;
 
-    BinaryOperator(OpType op, Expression* op1, Expression* op2): op(op), operand1(op1), operand2(op2) {}
+    BinaryOperator(OpType op, Expression* op1, Expression* op2): op(op), operand1(op1), operand2(op2) {
+        addChild(operand1);
+        addChild(operand2);
+    }
 
     string repr() override {
         return operand1->repr() + opString[op] + operand2->repr();
@@ -272,9 +309,13 @@ public:
     Identifier* identifier;
     ExpressionList* args = nullptr;
 
-    FuncCall(Identifier* id, ExpressionList* args): identifier(id), args(args) {}
+    FuncCall(Identifier* id, ExpressionList* args): identifier(id), args(args) {
+        addChild(identifier);
+        addChild(args);
+    }
 
     explicit FuncCall(Identifier* id): identifier(id) {
+        addChild(identifier);
     }
 
     string repr() override {
@@ -318,7 +359,10 @@ public:
     Expression* expression;
     Statement* statement;
 
-    CaseStmt(Expression* ex, Statement* stmt): expression(ex), statement(stmt) {}
+    CaseStmt(Expression* ex, Statement* stmt): expression(ex), statement(stmt) {
+        addChild(ex);
+        addChild(stmt);
+    }
 
     string repr() override {
         return "case " + expression->repr();
@@ -341,7 +385,10 @@ public:
     Expression* expression;
     CaseStmtList* switchBody;
 
-    SwitchStmt(Expression* ex, CaseStmtList* body): expression(ex), switchBody(body) {}
+    SwitchStmt(Expression* ex, CaseStmtList* body): expression(ex), switchBody(body) {
+        addChild(expression);
+        addChild(switchBody);
+    }
 
     string repr() override {
         return "switch statement";
@@ -355,7 +402,11 @@ public:
     int direction; // 1 TO 0 DOWN
 
     ForStmt(Identifier* id, Expression* ex1, Expression* ex2, int direction):
-            variable(id), left(ex1), right(ex2), direction(direction) {}
+            variable(id), left(ex1), right(ex2), direction(direction) {
+                addChild(variable);
+                addChild(left);
+                addChild(right);
+            }
 
     string repr() override {
         return "for statement";
@@ -367,7 +418,10 @@ public:
     Expression* condition;
     Statement* statement;
 
-    WhileStmt(Expression* ex, Statement* stmt): condition(ex), statement(stmt) {}
+    WhileStmt(Expression* ex, Statement* stmt): condition(ex), statement(stmt) {
+        addChild(ex);
+        addChild(stmt);
+    }
 
     string repr() override {
         return "while statement";
@@ -379,7 +433,10 @@ public:
     StatementList* statementList;
     Expression* condition;
 
-    RepeatStmt(StatementList* stmtList, Expression* ex): statementList(stmtList), condition(ex) {}
+    RepeatStmt(StatementList* stmtList, Expression* ex): statementList(stmtList), condition(ex) {
+        addChild(stmtList);
+        addChild(ex);
+    }
 
     string repr() override {
         return "repeat statement";
@@ -392,7 +449,11 @@ public:
     Statement *ifBody, *elseBody;
 
     IfStmt(Expression* ex, Statement* ifBody, Statement* elseBody):
-            condition(ex), ifBody(ifBody), elseBody(elseBody) {}
+            condition(ex), ifBody(ifBody), elseBody(elseBody) {
+                addChild(ex);
+                addChild(ifBody);
+                addChild(elseBody);
+            }
 
     string repr() override {
         return "if statement";
@@ -404,7 +465,10 @@ public:
     Identifier *procName;
     ExpressionList *args;
 
-    ProcCall(Identifier* name, ExpressionList* args): procName(name), args(args) {}
+    ProcCall(Identifier* name, ExpressionList* args): procName(name), args(args) {
+        addChild(name);
+        addChild(args);
+    }
 
     string repr() override {
         return "procedure call";
@@ -417,7 +481,10 @@ public:
     int leftType;// 1 ID 2 Array 3 Record
 
     AssignStmt(Expression* left, Expression* right, int leftType):
-            left(left), right(right), leftType(leftType) {}
+            left(left), right(right), leftType(leftType) {
+                addChild(left);
+                addChild(right);
+            }
 
     string repr() override {
         return left->repr() + " = " + right->repr();
@@ -429,7 +496,9 @@ public:
     int label;
     Statement* statement;
 
-    LabelStmt(int label, Statement* stmt): label(label), statement(stmt) {}
+    LabelStmt(int label, Statement* stmt): label(label), statement(stmt) {
+        addChild(statement);
+    }
 
     string repr() override {
         return to_string(label) + statement->repr();
@@ -493,7 +562,10 @@ class ArrayType: public Statement {
 public:
     TypeDecl *index, *arrayType;
 
-    ArrayType(TypeDecl* index, TypeDecl* type): index(index), arrayType(type) {}
+    ArrayType(TypeDecl* index, TypeDecl* type): index(index), arrayType(type) {
+        addChild(index);
+        addChild(type);
+    }
 
     string repr() override {
         return index->repr() + " " + arrayType->repr();
@@ -505,7 +577,10 @@ public:
     NameList* fieldNames;
     TypeDecl* fieldType;
 
-    FieldDecl(NameList* names, TypeDecl* type): fieldNames(names), fieldType(type) {}
+    FieldDecl(NameList* names, TypeDecl* type): fieldNames(names), fieldType(type) {
+        addChild(names);
+        addChild(type);
+    }
 
     string repr() override {
         return fieldNames->repr() + " " + fieldType->repr();
@@ -527,7 +602,9 @@ class RecordType: public Statement {
 public:
     FieldList* fields;
 
-    explicit RecordType(FieldList* fields): fields(fields) {}
+    explicit RecordType(FieldList* fields): fields(fields) {
+        addChild(fields);
+    }
 
     string repr() override {
         return "record Type";
@@ -539,7 +616,10 @@ public:
     Identifier* typeName;
     TypeDecl* type;
 
-    TypeDef(Identifier* id, TypeDecl* type): typeName(id), type(type) {}
+    TypeDef(Identifier* id, TypeDecl* type): typeName(id), type(type) {
+        addChild(typeName);
+        addChild(type);
+    }
 
     string repr() override {
         return typeName->repr() + ": " + type->repr();
@@ -564,7 +644,10 @@ public:
     Identifier* name;
     ConstValue* value;
 
-    ConstDecl(Identifier* name, ConstValue* value): name(name), value(value) {}
+    ConstDecl(Identifier* name, ConstValue* value): name(name), value(value) {
+        addChild(name);
+        addChild(value);
+    }
 
     string repr() override {
         return "const " + name->repr() + " " + value->repr();
@@ -597,7 +680,10 @@ public:
     NameList* names;
     TypeDecl* type;
 
-    VarDecl(NameList* names, TypeDecl* type): names(names), type(type) {}
+    VarDecl(NameList* names, TypeDecl* type): names(names), type(type) {
+        addChild(names);
+        addChild(type);
+    }
 
     string repr() override {
         return "var " + names->repr() + " " + type->repr();
@@ -630,7 +716,13 @@ public:
     Program(LabelDecl* labelPart, ConstDeclList* constPart, TypeDefList* typePart,
             VarDeclList* varPart, RoutineList* routineList, StatementList* routineBody):
             labelPart(labelPart), constPart(constPart), typePart(typePart), varPart(varPart),
-            routineBody(routineBody), routineList(routineList) {}
+            routineBody(routineBody), routineList(routineList) {
+                addChild(labelPart);
+                addChild(constPart);
+                addChild(typePart);
+                addChild(varPart);
+                addChild(routineBody);
+            }
 
     string repr() override {
         return "Program";
@@ -645,11 +737,19 @@ public:
     VarDeclList* args;
 
     Routine(RoutineType routineType, Identifier* id, VarDeclList* args, TypeDecl* returnType):
-            routineType(routineType), routineName(id), returnType(returnType), args(args) {}
+            routineType(routineType), routineName(id), returnType(returnType), args(args) {
+                addChild(routineName);
+                addChild(returnType);
+                addChild(args);
+            }
 
     Routine(Routine* head, Program *routine): Program(*routine), routineName(head->routineName),
                                               routineType(head->routineType), returnType(head->returnType),
-                                              args(head->args) {}
+                                              args(head->args) {
+                                                addChild(routineName);
+                                                addChild(returnType);
+                                                addChild(args);
+                                              }
 
     string repr() override {
         return "routine";
@@ -668,5 +768,7 @@ public:
         return "routine list";
     }
 };
+
+
 
 #endif

@@ -9,6 +9,7 @@ extern "C" {
     int yyerror(const char*);
     extern int yylex(void);
 }
+Node *tree;
 %}
 
 %union{
@@ -75,7 +76,7 @@ extern "C" {
 %type <AST_Program> routine_head routine program_head program
 
 %%
-program: program_head    routine DOT { $$ = $2; }
+program: program_head    routine DOT {$$ = $2;tree=$$;}
     ;
 program_head:
     PROGRAM ID  SEMI    {}
@@ -90,6 +91,7 @@ routine:
 routine_head:
     label_part  const_part  type_part   var_part    routine_part    {
         $$ = new Program($1, $2, $3, $4, $5, nullptr);
+        cout<<$5->repr()+"2333"<<endl;
     }
     ;
 routine_part:
@@ -219,7 +221,7 @@ name_list:
     | ID    { $$ = new NameList(new Identifier($1)); }
     ;
 compound_stmt:
-    START   stmt_list   END { $$ = $2; }
+    START   stmt_list   END { $$ = $2;}
     ;
 stmt_list:
     stmt_list  stmt  SEMI  { $$->addChild($2); }
@@ -230,7 +232,7 @@ stmt:
     | non_label_stmt { $$ = $1; }
     ;
 non_label_stmt:
-    assign_stmt { $$ = $1; }
+    assign_stmt { $$ = $1;}
     | proc_stmt { $$ = $1; }
     | compound_stmt { $$ = $1; }
     | if_stmt { $$ = $1; }
@@ -241,7 +243,7 @@ non_label_stmt:
     | goto_stmt { $$ = $1; }
     ;
 assign_stmt:
-    ID  ASSIGN  expression { $$ = new AssignStmt(new Identifier($1), $3, 1); }
+    ID  ASSIGN  expression { $$ = new AssignStmt(new Identifier($1), $3, 1);}
     | ID LB expression RB ASSIGN expression {
         $$ = new AssignStmt(new ArrayRef(new Identifier($1), $3), $6, 2);
     }
@@ -311,7 +313,7 @@ expression:
     | expr { $$ = $1; }
     ;
 expr: 
-    expr  PLUS  term  {$$ = new BinaryOperator(OpType::plus, $1, $3); }
+    expr  PLUS  term  {$$ = new BinaryOperator(OpType::plus, $1, $3);}
     | expr  MINUS  term  {$$ = new BinaryOperator(OpType::minus, $1, $3); }
     | expr  OR  term  {$$ = new BinaryOperator(OpType::OP_OR, $1, $3); }
     | term { $$ = $1; }
@@ -324,7 +326,7 @@ term:
     | factor { $$ = $1; }
     ;
 factor: 
-    NAME  { $$ = new Identifier($1); }
+    ID  { $$ = new Identifier($1);}
     | NAME  LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
     | SYS_FUNCT { $$ = new FuncCall(new Identifier($1)); }
     | SYS_FUNCT  LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
@@ -361,5 +363,6 @@ int main(void)
                 fprintf(stderr, "Error!\n");
                 exit(1);
         }
+        tree->printPascalTree(tree);
 }
 

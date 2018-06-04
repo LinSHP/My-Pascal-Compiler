@@ -55,13 +55,15 @@ extern "C"
 
 [a-zA-Z]([a-zA-Z0-9_])* {
 	yylval.string_value = yytext;
-	cout << yytext << endl;
+	// cout << yytext << endl;
     return ID;
 }
 
 [0-9]+ {
     yylval.int_value = atoi(yytext);
+    // cout<<"int"<<endl;
     return INT_LITERAL;
+
 }
 
 ([1-9][0-9]*)|0|([0-9]+\.[0-9]+) {
