@@ -114,7 +114,7 @@ public:
     virtual void addChild(Node* node) {
         children.push_back(node);
     }
-    void printPascalTree(Node *tree){
+    virtual void printPascalTree(Node *tree){
         cout<<"now print tree"<<endl;
         if (tree == NULL)
             return;
@@ -721,7 +721,7 @@ public:
                 addChild(constPart);
                 addChild(typePart);
                 addChild(varPart);
-                addChild(routineBody);
+                addChild((Node *)routineList);
             }
 
     string repr() override {
