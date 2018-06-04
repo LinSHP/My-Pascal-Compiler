@@ -1,11 +1,15 @@
+%{
+#include "AST.h"
 #include <iostream>
 #include <stdlib.h>
-#include "y.tab.h"
+#include "pascal.hpp"
 
-int yywrap(void)
+extern "C"
 {
-    return 1;
+    int yywrap(void);
+    int yylex(void);
 }
+%}
 
 %%
 "("     return LP;
@@ -29,8 +33,8 @@ int yywrap(void)
 ":="     return ASSIGN;
 "~"     return NOT;
 ";"     return SEMI;
-"begin" return BEGIN;
-"end"   return END:
+"begin" return START;
+"end"   return END;
 "var"   return VAR;
 "boolean"   return BOOLEAN;
 "char"  return CHAR;
@@ -44,12 +48,14 @@ int yywrap(void)
 "downto"    return DOWNTO;
 "else"  return ELSE;
 "read"  return READ;
-"repeat"    return REAPEAT;
+"repeat"    return REPEAT;
 "then"  return THEN;
 "until" return UNTIL;
+"program" return PROGRAM;
 
 [a-zA-Z]([a-zA-Z0-9_])* {
-	yylval.sval = yytext
+	yylval.string_value = yytext;
+	cout << yytext << endl;
     return ID;
 }
 
@@ -69,7 +75,7 @@ int yywrap(void)
 }
 
 \'(.)\' {
-    yylval.char_value = yytext;
+    yylval.string_value = yytext;
     return CHAR_LITERAL;
 }
 
@@ -81,3 +87,7 @@ int yywrap(void)
     exit(1);
 }
 %%
+
+int yywrap(void) {
+    return 1;
+}

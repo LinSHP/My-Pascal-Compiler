@@ -1,6 +1,9 @@
+#ifndef TREE_NODE
+#define TREE_NODE
 #include <iostream>
 #include <vector>
 #include <string>
+#include <stdio.h>
 
 using namespace std;
 
@@ -40,7 +43,7 @@ struct DataValue{
 class TreeNode{
 public:
     vector<TreeNode> childNode;
-    TreeNode siblingNode = NULL;
+    TreeNode* siblingNode = NULL;
     OperatorType nodeType;
     DataType dataType;
     DataValue dataValue;
@@ -73,3 +76,5 @@ public:
         this->dataValue._char = data;
     }
 };
+
+#endif
