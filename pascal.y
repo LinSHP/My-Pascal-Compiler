@@ -42,7 +42,7 @@ Node *tree;
 
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL FALSE TRUE MAXINT
-%token <string_value>STRING_LITERAL ID
+%token <string_value> ID
 %token <string_value>CHAR_LITERAL
 %token LP RP LB RB DOT COMMA COLON UL DIV PLUS MINUS GE GT LE LT
 %token EQUAL ASSIGN SEMI ELSE REPEAT THEN IF UNTIL NOT
@@ -342,8 +342,8 @@ factor:
 const_value:
     INT_LITERAL { $$ = new IntLiteral($1);}
     | DOUBLE_LITERAL    { $$ = new DoubleLiteral($1);}
-    | STRING_LITERAL    { $$ = new StringLiteral($1);}
-    | CHAR_LITERAL  { $$ = new CharLiteral($1);}
+    | CHAR_LITERAL  { $$ = new CharLiteral($1); }
+    | BOOL_LITERAL  { $$ = new BoolLiteral($1); }
     ;
 %%
 

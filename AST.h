@@ -9,12 +9,12 @@
 #include <vector>
 #include <iostream>
 #include <queue>
-//#include <llvm/IR/Value.h>
-//#include <llvm/IR/Instructions.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/Instructions.h>
 
 using namespace std;
 
-class ASTContext;
+class CodeGenContext;
 class Node;
 
 class Expression;
@@ -110,7 +110,7 @@ public:
     virtual ~Node() = default;
     virtual string repr() = 0;
     // TODO: implement CodeGen
-    // virtual llvm::Value *CodeGen(ASTContext& context) = 0;
+    virtual llvm::Value *codeGen(CodeGenContext& context) = 0;
     virtual void addChild(Node* node) {
         children.push_back(node);
     }
@@ -170,6 +170,7 @@ public:
     string repr() override {
         return name;
     }
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class NameList: public Expression {
@@ -186,6 +187,8 @@ public:
 // ConstValue的根节点
 class ConstValue: public Expression{
 public:
+    bool isRangeType = true;
+    int rangeValue;
     Type valueType;
 };
 
@@ -195,11 +198,13 @@ public:
 
     explicit IntLiteral(int value): value(value) {
         valueType = Type::integer;
+        rangeValue = value;
     }
 
     string repr() override {
         return "int: " + to_string(value);
     }
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class DoubleLiteral: public ConstValue {
@@ -208,28 +213,13 @@ public:
 
     explicit DoubleLiteral(double value): value(value) {
         valueType = Type::real;
+        isRangeType = false;
     }
 
     string repr() override  {
         return "double: " + to_string(value);
     }
-};
-
-class StringLiteral: public ConstValue {
-public:
-    const string literal;
-
-    explicit StringLiteral(string literal): literal(std::move(literal)) {
-        valueType = Type::string;
-    }
-
-    explicit StringLiteral(const char* s): literal(s) {
-        valueType = Type::string;
-    }
-
-    string repr() override {
-        return "string: " + literal;
-    }
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class CharLiteral: public ConstValue {
@@ -238,11 +228,34 @@ public:
 
     explicit CharLiteral(const char* literal): literal(literal[0]) {
         valueType = Type::character;
+        rangeValue = (int)literal;
     }
 
     string repr() override {
         return "char: " + string(1, literal);
     }
+    llvm::Value *codeGen(CodeGenContext& context) override;
+};
+
+class BoolLiteral: public ConstValue {
+public:
+    int value;
+
+    explicit BoolLiteral(const char* literal) {
+        if (literal == "true")
+            value = 1;
+        else
+            value = 0;
+        rangeValue = value;
+    }
+
+    string repr() override {
+        if (value == 1)
+            return "true";
+        else
+            return "false";
+    }
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class RecordRef: public Expression {
@@ -273,6 +286,7 @@ public:
     string repr() override {
         return arrayName->repr() + "[" + index->repr() + "]";
     }
+    llvm::Value* getRef(CodeGenContext& context);
 };
 
 class UnaryOperator: public Expression {
@@ -302,6 +316,8 @@ public:
     string repr() override {
         return operand1->repr() + opString[op] + operand2->repr();
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class FuncCall: public Expression {
@@ -479,16 +495,34 @@ class AssignStmt: public Statement {
 public:
     Expression *left, *right;
     int leftType;// 1 ID 2 Array 3 Record
+    string leftName;
 
-    AssignStmt(Expression* left, Expression* right, int leftType):
+    AssignStmt(Identifier* left, Expression* right, int leftType):
             left(left), right(right), leftType(leftType) {
                 addChild(left);
                 addChild(right);
+                leftName = left->name;
             }
+
+    AssignStmt(ArrayRef* left, Expression* right, int leftType):
+            left(left), right(right), leftType(leftType) {
+                addChild(left);
+                addChild(right);
+                leftName = left->arrayName->name;
+    }
+
+    AssignStmt(RecordRef* left, Expression* right, int leftType):
+            left(left), right(right), leftType(leftType) {
+                addChild(left);
+                addChild(right);
+                leftName = left->recordName->name;
+    }
 
     string repr() override {
         return left->repr() + " = " + right->repr();
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class LabelStmt: public Statement {
@@ -556,6 +590,8 @@ public:
         else
             return lowStr + "..." + highStr;
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class ArrayType: public Statement {
@@ -652,6 +688,8 @@ public:
     string repr() override {
         return "const " + name->repr() + " " + value->repr();
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class ConstDeclList: public Statement {
