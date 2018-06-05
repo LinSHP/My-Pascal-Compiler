@@ -25,7 +25,7 @@ extern "C"
 "+"     return PLUS;
 "-"     return MINUS;
 ">="    return GE;
-">"     return GT;
+">"     {return GT;}
 "<="    return LE;
 "<"     return LT;
 "="     return EQUAL;
@@ -52,6 +52,7 @@ extern "C"
 "then"  return THEN;
 "until" return UNTIL;
 "program" return PROGRAM;
+"if"    return IF;
 
 [a-zA-Z]([a-zA-Z0-9_])* {
 	yylval.string_value = yytext;
@@ -88,6 +89,8 @@ extern "C"
     fprintf(stderr, "lexical error.\n");
     exit(1);
 }
+
+"boolean"|"char"|"integer"|"real"|"longint"    {return SYS_TYPE;}
 %%
 
 int yywrap(void) {

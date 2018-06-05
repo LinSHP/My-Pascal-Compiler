@@ -95,7 +95,7 @@ routine_head:
     }
     ;
 routine_part:
-    routine_part    function_decl   { $$->addChild($2);}
+    routine_part    function_decl   { $$->addChild($2);cout<<"routine part"<<endl;}
     | routine_part  procedure_decl  { $$->addChild($2);}
     | { $$ = new RoutineList();}
     ;
@@ -107,8 +107,9 @@ function_decl:
     ;
 function_head:
     FUNCTION    ID  parameters  COLON   simple_type_decl    {
-        $$ = new Routine(RoutineType::function, new Identifier($2), $3, $5);
         cout<<"function head"<<endl;
+        $$ = new Routine(RoutineType::function, new Identifier($2), $3, $5);
+        
     }
     ;
 procedure_decl:
@@ -265,6 +266,8 @@ if_stmt:
     IF expression  THEN  stmt  else_clause {
         $5->condition = $2;
         $5->ifBody = $4;
+        $5->addChild($2);
+        $5->addChild($4);
         $$ = $5;
     }
     ;
@@ -309,32 +312,32 @@ args_list:
     ;
 expression: 
     expression  GE  expr  {$$ = new BinaryOperator(OpType::ge, $1, $3); }
-    | expression  GT  expr  {$$ = new BinaryOperator(OpType::gt, $1, $3); }
+    | expression  GT  expr  {$$ = new BinaryOperator(OpType::gt, $1, $3); cout<<"GTT"<<endl;}
     | expression  LE  expr  {$$ = new BinaryOperator(OpType::le, $1, $3); }
     | expression  LT  expr  {$$ = new BinaryOperator(OpType::lt, $1, $3); }
     | expression  EQUAL  expr  {$$ = new BinaryOperator(OpType::eq, $1, $3); }
     | expression  UNEQUAL  expr  {$$ = new BinaryOperator(OpType::ne, $1, $3); }
-    | expr { $$ = $1; }
+    | expr { $$ = $1; cout<<"expr"<<endl;}
     ;
 expr: 
     expr  PLUS  term  {$$ = new BinaryOperator(OpType::plus, $1, $3);}
     | expr  MINUS  term  {$$ = new BinaryOperator(OpType::minus, $1, $3); }
     | expr  OR  term  {$$ = new BinaryOperator(OpType::OP_OR, $1, $3); }
-    | term { $$ = $1; }
+    | term { $$ = $1;cout<<"term"<<endl;}
     ;
 term: 
     term  MUL  factor  {$$ = new BinaryOperator(OpType::mul, $1, $3); }
     | term  DIV  factor  {$$ = new BinaryOperator(OpType::div, $1, $3); }
     | term  MOD  factor  {$$ = new BinaryOperator(OpType::mod, $1, $3); }
     | term  AND  factor  {$$ = new BinaryOperator(OpType::OP_AND, $1, $3); }
-    | factor { $$ = $1; }
+    | factor { $$ = $1;cout<<"factor"<<endl;}
     ;
 factor: 
-    ID  { $$ = new Identifier($1);}
+    ID  { cout<<"id"<<endl;$$ = new Identifier($1);}
     | NAME  LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
     | SYS_FUNCT { $$ = new FuncCall(new Identifier($1)); }
     | SYS_FUNCT  LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
-    | const_value  { $$ = $1; }
+    | const_value  { cout<<"const"<<endl;$$ = $1;}
     | LP  expression  RP { $$ = $2; }
     | NOT  factor  { $$ = new UnaryOperator(OpType::OP_NOT, $2); }
     | MINUS  factor  {
@@ -344,7 +347,7 @@ factor:
     | ID  DOT  ID {$$ = new RecordRef(new Identifier($1), new Identifier($3)); }
     ;
 const_value:
-    INT_LITERAL { $$ = new IntLiteral($1);}
+    INT_LITERAL { $$ = new IntLiteral($1); cout<<"int"<<endl;}
     | DOUBLE_LITERAL    { $$ = new DoubleLiteral($1);}
     | STRING_LITERAL    { $$ = new StringLiteral($1);}
     | CHAR_LITERAL  { $$ = new CharLiteral($1);}
@@ -354,7 +357,7 @@ const_value:
 int yyerror(char const *str)
 {
         extern char *yytext;
-        fprintf(stderr, "parser error near %s\n", yytext);
+        fprintf(stderr, "parser error near %s, %s\n", yytext, str);
         return 0;
 }
 
