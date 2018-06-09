@@ -51,8 +51,9 @@ Program* root;
 %token ARRAY WHILE SYS_CON MOD INTEGER PROGRAM RECORD
 %token GOTO FUNCTION CASE DOWNTO TO MUL PROCEDURE CONST DOTDOT
 %token END OR OF TYPE DO UNEQUAL AND VAR START FOR CHAR REAL BOOLEAN
-%token <string_value> NAME SYS_TYPE SYS_PROC READ SYS_FUNCT
+%token <string_value> SYS_TYPE SYS_PROC READ SYS_FUNCT
 
+%type <string_value> NAME
 %type <AST_ConstValue> const_value
 %type <AST_Expression> factor term expr expression
 %type <AST_ExpressionList> args_list expression_list
@@ -358,6 +359,9 @@ const_value:
     | DOUBLE_LITERAL    { $$ = new DoubleLiteral($1);}
     | CHAR_LITERAL  { $$ = new CharLiteral($1); }
     | BOOL_LITERAL  { $$ = new BoolLiteral($1); }
+    ;
+NAME:
+    MY_ID { $$ = $1; }
     ;
 %%
 

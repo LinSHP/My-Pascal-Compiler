@@ -1,10 +1,19 @@
 program HelloWorld;
 var
     aa, b, c, result : integer;
+function max(num1, num2: integer): integer;
+var
+    result: integer;
+begin
+    if (num1 > num2) then
+        result := num1
+    else
+        result := num2;
+    max := result;
+end;
 begin
    aa := 100;
    b := 200;
    c := aa>b;
-
    if aa>3 then result:=aa else result:=b;
 end.

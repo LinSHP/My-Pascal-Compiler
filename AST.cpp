@@ -265,12 +265,14 @@ llvm::Value *Routine::codeGen(CodeGenContext &context) {
     std::vector<llvm::Type *> arg_types;
     for (auto it : this->args->children) {
         auto varDecl = (VarDecl *) it;
-        arg_types.push_back(varDecl->type->toLLvmType());
+        for (auto temp: varDecl->names->children)
+            arg_types.push_back(varDecl->type->toLLvmType());
     }
     auto f_type = llvm::FunctionType::get(
             this->isProcedure() ? llvm::Type::getVoidTy(llvmContext) : this->returnType->toLLvmType(),
             llvm::makeArrayRef(arg_types), false);
-    auto function = llvm::Function::Create(f_type, llvm::GlobalValue::InternalLinkage, this->routineName->name.c_str(),
+    std::cout << this->routineName->name << std::endl;
+    auto function = llvm::Function::Create(f_type, llvm::GlobalValue::InternalLinkage, this->routineName->name,
                                            context.module);
     auto block = llvm::BasicBlock::Create(llvmContext, "entry", function, NULL);
     auto oldFunc = context.currentFunction;
@@ -285,7 +287,8 @@ llvm::Value *Routine::codeGen(CodeGenContext &context) {
     auto args_values = function->arg_begin();
     for (auto arg : this->args->children) {
         auto varDecl = (VarDecl *) arg;
-        for (auto name: varDecl->names->children) {
+        for (auto temp: varDecl->names->children) {
+            auto name = (Identifier*)temp;
             varDecl->codeGen(name->name, context);
             arg_value = args_values++;
             arg_value->setName(name->name.c_str());
@@ -296,7 +299,7 @@ llvm::Value *Routine::codeGen(CodeGenContext &context) {
     std::cout << "is func?" << !this->isProcedure() << " part suc!\n";
     // add function return variable
     if (!this->isProcedure()) {
-        std::cout << "Creating function return value declaration" << std::endl;
+        std::cout << "Creating function return value declaration" << this->returnType->repr() << std::endl;
         auto alloc = new llvm::AllocaInst(this->returnType->toLLvmType(), 32, this->routineName->name.c_str(),
                                           context.currentBlock());
         // context.insert(this->routine_name->name) = alloc;
@@ -306,7 +309,8 @@ llvm::Value *Routine::codeGen(CodeGenContext &context) {
     for (auto arg: this->varPart->children) {
         std::cout << "Generating code for decl " << typeid(arg).name() << std::endl;
         auto varDecl = (VarDecl *) arg;
-        for (auto name: varDecl->names->children) {
+        for (auto temp: varDecl->names->children) {
+            auto name = (Identifier*)temp;
             varDecl->codeGen(name->name, context);
         }
     }
@@ -340,13 +344,14 @@ llvm::Value *Routine::codeGen(CodeGenContext &context) {
 }
 
 llvm::Value *FuncCall::codeGen(CodeGenContext &context) {
-    auto function = context.module->getFunction(this->identifier->name.c_str());
+    auto function = context.module->getFunction(this->identifier->name);
     if (function == nullptr)
         throw std::domain_error("Function not defined: " + this->identifier->name);
     std::vector<Value *> args;
     for (auto node: this->args->children) {
         auto varDecl = (VarDecl *) node;
-        for (auto name: varDecl->names->children) {
+        for (auto temp: varDecl->names->children) {
+            auto name = (Identifier*)temp;
             args.push_back(varDecl->codeGen(name->name, context));
         }
     }
@@ -362,7 +367,8 @@ llvm::Value *ProcCall::codeGen(CodeGenContext &context) {
     std::vector<Value *> args;
     for (auto node: this->args->children) {
         auto varDecl = (VarDecl *) node;
-        for (auto name: varDecl->names->children) {
+        for (auto temp: varDecl->names->children) {
+            auto name = (Identifier*)temp;
             args.push_back(varDecl->codeGen(name->name, context));
         }
     }
