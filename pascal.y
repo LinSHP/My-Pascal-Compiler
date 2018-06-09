@@ -87,18 +87,18 @@ routine:
     routine_head    routine_body    {
         $$ = $1;
         $$->routineBody = $2;
+        $$->addChild($2);
     }
     ;
 routine_head:
     label_part  const_part  type_part   var_part    routine_part    {
         $$ = new Program($1, $2, $3, $4, $5, nullptr);
-        cout<<$5->repr()+"2333"<<endl;
     }
     ;
 routine_part:
-    routine_part    function_decl   { $$->addChild($2); }
-    | routine_part  procedure_decl  { $$->addChild($2); }
-    | { $$ = new RoutineList(); }
+    routine_part    function_decl   { $$->addChild($2);cout<<"routine part"<<endl;}
+    | routine_part  procedure_decl  { $$->addChild($2);}
+    | { $$ = new RoutineList();}
     ;
 function_decl:
     function_head   SEMI    routine SEMI    {
@@ -108,6 +108,7 @@ function_decl:
 function_head:
     FUNCTION    MY_ID  parameters  COLON   simple_type_decl    {
         $$ = new Routine(RoutineType::function, new Identifier($2), $3, $5);
+
     }
     ;
 procedure_decl:
@@ -265,6 +266,8 @@ if_stmt:
     IF expression  THEN  stmt  else_clause {
         $5->condition = $2;
         $5->ifBody = $4;
+        $5->addChild($2);
+        $5->addChild($4);
         $$ = $5;
     }
     ;
@@ -354,8 +357,85 @@ const_value:
 int yyerror(char const *str)
 {
         extern char *yytext;
-        fprintf(stderr, "parser error near %s\n", yytext);
+        fprintf(stderr, "parser error near %s, %s\n", yytext, str);
         return 0;
 }
 
+void printPascalTree(Node *tree){
+    cout<<"now print tree"<<endl;
+    if (tree == NULL)
+        return;
+    queue<Node *> nodeQueue;
+    nodeQueue.push(tree);
+    while (nodeQueue.size()){
+        Node *nowNode = nodeQueue.front();
+        cout<< nowNode->repr()<<"-> ";
+        nodeQueue.pop();
+        for (int i=0; i < nowNode->children.size(); i++){
+            if (nowNode->children[i]!=NULL){
+                cout<<nowNode->children[i]->repr()<<" ";
+                nodeQueue.push(nowNode->children[i]);
+            }
+
+        }
+        cout<<endl;
+    }
+}
+
+string printTree2(Node *tree, int indent){
+    string res="";
+    if (tree!=NULL){
+        for (int i=0; i<indent;i++){
+            res+='\t';
+        }
+        if (tree->children.size()==0){
+            res+="\""+tree->repr()+"\":{}\n";
+            return res;
+        }
+        res+="\""+tree->repr()+"\":{\n";
+        // cout<<tree->repr()<<endl;
+        for (int i=0; i < tree->children.size(); i++){
+            if (tree->children[i]!=NULL){
+                if (i!=tree->children.size()-1)
+                    res+=printTree2(tree->children[i], indent+1)+",";
+                else
+                    res+=printTree2(tree->children[i], indent+1);
+            }
+        }
+        res+="}";
+    }
+    return res;
+}
+
+
+void printTreet(Node *tree, int indent){
+    if (tree!=NULL){
+        // cout<<tree->children.size();
+        for (int i=0; i<indent;i++){
+            cout<<'\t';
+        }
+        cout<<tree->repr()<<endl;
+        for (int i=0; i < tree->children.size(); i++){
+            // cout<<"1 ";
+            if (tree->children[i]!=NULL){
+                printTreet(tree->children[i], indent+1);
+            }
+        }
+
+    }
+}
+
+int main(void)
+{
+        extern int yyparse(void);
+        extern FILE *yyin;
+        yyin = stdin;
+        if (yyparse()) {
+                fprintf(stderr, "Error!\n");
+                exit(1);
+        }
+        // printPascalTree(tree);
+        // printTreet(tree, 0);
+        cout<<"{"+printTree2(tree,0)+"}";
+}
 

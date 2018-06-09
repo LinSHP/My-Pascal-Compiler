@@ -36,12 +36,12 @@ extern "C"
 "begin" return START;
 "end"   return END;
 "var"   return VAR;
-"boolean"   return SYS_TYPE;
-"char"  return SYS_TYPE;
-"integer" return SYS_TYPE;
-"real"  return SYS_TYPE;
-"false" return BOOL_LITERAL;
-"true"  return BOOL_LITERAL;
+"boolean"   return BOOLEAN;
+"char"  return CHAR;
+"integer" return INTEGER;
+"real"  return REAL;
+"false" return FALSE;
+"true"  return TRUE;
 "maxint"    return MAXINT;
 "type"  return TYPE;
 "to"    return TO;
@@ -52,6 +52,7 @@ extern "C"
 "then"  return THEN;
 "until" return UNTIL;
 "program" return PROGRAM;
+"if"    return IF;
 
 [a-zA-Z]([a-zA-Z0-9_])* {
 	yylval.string_value = yytext;
@@ -88,6 +89,8 @@ extern "C"
     fprintf(stderr, "lexical error.\n");
     exit(1);
 }
+
+"boolean"|"char"|"integer"|"real"|"longint"    {return SYS_TYPE;}
 %%
 
 int yywrap(void) {
