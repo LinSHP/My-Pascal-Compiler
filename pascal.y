@@ -41,10 +41,11 @@ Program* root;
     Program* AST_Program;
 }
 
+%token MY_ID
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL FALSE TRUE MAXINT
 %token <string_value> MY_ID STRING_LITERAL
-%token <string_value>CHAR_LITERAL BOOL_LITERAL
+%token <string_value> CHAR_LITERAL BOOL_LITERAL
 %token MY_LP RP LB RB DOT COMMA COLON UL DIV PLUS MINUS GE GT MY_LE MY_LT
 %token EQUAL ASSIGN SEMI ELSE REPEAT THEN IF UNTIL NOT
 %token ARRAY WHILE SYS_CON MOD INTEGER PROGRAM RECORD
@@ -80,7 +81,7 @@ Program* root;
 program: program_head    routine DOT {$$ = $2;tree=$$; root=$$;}
     ;
 program_head:
-    PROGRAM MY_ID  SEMI    {}
+    PROGRAM MY_ID  SEMI    { cout << $2 << endl;}
     | {}
     ;
 routine:
@@ -210,7 +211,10 @@ array_type_decl:
     }
     ;
 simple_type_decl:
-    SYS_TYPE  { $$ = new TypeDecl($1); }  //这里的SYS_TYPE和NAME还是有问题的
+    SYS_TYPE  {
+        cout << "SYS_TYPE: " << $1 << endl;
+        $$ = new TypeDecl($1);
+    }  //这里的SYS_TYPE和NAME还是有问题的
     | NAME  { $$ = new TypeDecl($1); }
     | MY_LP name_list RP   {} //enum 先不写
     | INT_LITERAL   DOTDOT  INT_LITERAL { $$ = new TypeDecl(new RangeType($1, $3)); }
@@ -246,7 +250,7 @@ non_label_stmt:
     ;
 assign_stmt:
     MY_ID  ASSIGN  expression {
-        cout << "MY_ID: " << $1 << endl;
+        cout << "MY_ID: " <<  $1 << endl;
         $$ = new AssignStmt(new Identifier($1), $3);
     }
     | MY_ID LB expression RB ASSIGN expression {
@@ -333,7 +337,10 @@ term:
     | factor { $$ = $1; }
     ;
 factor: 
-    MY_ID  { $$ = new Identifier($1);}
+    MY_ID  {
+        $$ = new Identifier($1);
+        cout << $1 << endl;
+    }
     | NAME  MY_LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
     | SYS_FUNCT { $$ = new FuncCall(new Identifier($1)); }
     | SYS_FUNCT  MY_LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
@@ -425,17 +432,5 @@ void printTreet(Node *tree, int indent){
     }
 }
 
-int main(void)
-{
-        extern int yyparse(void);
-        extern FILE *yyin;
-        yyin = stdin;
-        if (yyparse()) {
-                fprintf(stderr, "Error!\n");
-                exit(1);
-        }
-        // printPascalTree(tree);
-        // printTreet(tree, 0);
-        cout<<"{"+printTree2(tree,0)+"}";
-}
+
 

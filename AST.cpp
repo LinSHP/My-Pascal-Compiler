@@ -15,7 +15,7 @@ Value *Identifier::codeGen(CodeGenContext &context) {
 }
 
 Value *IntLiteral::codeGen(CodeGenContext &context) {
-    cout << "creating int" << value << endl;
+    cout << "creating int: " << value << endl;
     return ConstantInt::get(Type::getInt32Ty(llvmContext), value, true);
 }
 
@@ -244,8 +244,11 @@ llvm::Value *Program::codeGen(CodeGenContext &context) {
     for (auto node: this->varPart->children) {
         std::cout << "Generating code for " << typeid(node).name() << std::endl;
         auto var_decl = (VarDecl *) node;
-        for (auto name: var_decl->names->children)
-            last = var_decl->codeGen(name->name, context);
+        var_decl->isGlobal = 1;
+        for (auto temp: var_decl->names->children) {
+            auto idd = (Identifier*)temp;
+            last = var_decl->codeGen(idd->name, context);
+        }
     }
     for (auto routine : this->routineList->children) {
         std::cout << "Generating code for " << typeid(routine).name() << std::endl;

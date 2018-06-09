@@ -9,10 +9,11 @@ using namespace std;
 
 extern int yyparse();
 extern Program* root;
+string printTree2(Node *tree, int indent);
 
 int main(int argc, char* argv[]) {
     yyparse();
-    cout << root->repr() << endl;
+    cout<<"{"+printTree2(root,0)+"}";
 
     CodeGenContext context;
     context.generateCode(*root);

@@ -1,8 +1,10 @@
 program HelloWorld;
+var
+    aa, b, c, result : integer;
 begin
-   a := 100;
+   aa := 100;
    b := 200;
-   c := a>b;
+   c := aa>b;
 
-   if a>3 then result:=a else result:=b;
+   if aa>3 then result:=aa else result:=b;
 end.

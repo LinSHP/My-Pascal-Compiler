@@ -30,16 +30,12 @@ extern "C"
 "<"     return MY_LT;
 "="     return EQUAL;
 "!="    return UNEQUAL;
-":="     return ASSIGN;
+":="     { cout << yytext << endl; return ASSIGN; }
 "~"     return NOT;
 ";"     return SEMI;
 "begin" return START;
 "end"   return END;
 "var"   return VAR;
-"boolean"   return BOOLEAN;
-"char"  return CHAR;
-"integer" return INTEGER;
-"real"  return REAL;
 "false" return FALSE;
 "true"  return TRUE;
 "maxint"    return MAXINT;
@@ -53,9 +49,11 @@ extern "C"
 "until" return UNTIL;
 "program" return PROGRAM;
 "if"    return IF;
+"function" return FUNCTION;
+"boolean"|"char"|"integer"|"real"|"longint"    { yylval.string_value = strdup(yytext); return SYS_TYPE;}
 
-[a-zA-Z]([a-zA-Z0-9_])* {
-	yylval.string_value = yytext;
+([_a-zA-Z])([_a-zA-Z0-9])* {
+	yylval.string_value = strdup(yytext);
 	cout << yytext << endl;
     return MY_ID;
 }
@@ -73,16 +71,14 @@ extern "C"
 }
 
 \"(\\.|[^"\\])*\" {
-    yylval.string_value = yytext;
+    yylval.string_value = strdup(yytext);
     return STRING_LITERAL;
 }
 
 \'(.)\' {
-    yylval.string_value = yytext;
+    yylval.string_value = strdup(yytext);
     return CHAR_LITERAL;
 }
-
-"function" return FUNCTION;
 
 [ \t] ;
 . {
@@ -90,7 +86,6 @@ extern "C"
     exit(1);
 }
 
-"boolean"|"char"|"integer"|"real"|"longint"    {return SYS_TYPE;}
 %%
 
 int yywrap(void) {
