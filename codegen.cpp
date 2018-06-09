@@ -53,7 +53,7 @@ void CodeGenContext::generateCode(Program& root)
 
     // write IR to stderr
     std::cout<<"code is gen~~~\n";
-    module->dump();
+    module->print(llvm::errs(), nullptr);
     std::cout<<"code is gen~!~\n";
 }
 
@@ -62,7 +62,7 @@ GenericValue CodeGenContext::runCode() {
     std::cout << "Running begining...\n";
     std::cout <<
               "========================================" << std::endl;
-    ExecutionEngine *ee = EngineBuilder(module).create();
+    ExecutionEngine *ee = EngineBuilder(unique_ptr<Module>(module)).create();
     std::vector<GenericValue> noargs;
     GenericValue v = ee->runFunction(mainFunction, noargs);
     std::cout << "========================================" << std::endl;

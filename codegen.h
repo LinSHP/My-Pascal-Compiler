@@ -22,6 +22,7 @@
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/ExecutionEngine/Interpreter.h>
 #include <llvm/Support/raw_ostream.h>
 #include "AST.h"
 #include <llvm/IR/Constants.h>

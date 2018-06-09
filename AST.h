@@ -27,11 +27,11 @@ class DoubleLiteral;
 class StringLiteral;
 class CharLiteral;
 class BoolLiteral;
-class ArrayRef;
+class MyArrayRef;
 class RecordRef;
 class FuncCall;
 class UnaryOperator;
-class BinaryOperator;
+class MyBinaryOperator;
 
 class Statement;
 class StatementList;
@@ -63,7 +63,7 @@ class Routine;
 class RoutineList;
 class Program;
 
-enum class Type : int{
+enum class MY_Type : int{
     integer,
     real,
     string,
@@ -110,7 +110,7 @@ public:
     virtual ~Node() = default;
     virtual string repr() = 0;
     // TODO: implement CodeGen
-    virtual llvm::Value *codeGen(CodeGenContext& context) = 0;
+    virtual llvm::Value *codeGen(CodeGenContext& context) {}
     virtual void addChild(Node* node) {
         children.push_back(node);
     }
@@ -147,6 +147,8 @@ public:
     string repr() override {
         return "expression";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override {}
 };
 
 class ExpressionList: public Node {
@@ -189,7 +191,8 @@ class ConstValue: public Expression{
 public:
     bool isRangeType = true;
     int rangeValue;
-    Type valueType;
+    MY_Type valueType;
+
 };
 
 class IntLiteral: public ConstValue{
@@ -197,7 +200,7 @@ public:
     const int value;
 
     explicit IntLiteral(int value): value(value) {
-        valueType = Type::integer;
+        valueType = MY_Type::integer;
         rangeValue = value;
     }
 
@@ -212,7 +215,7 @@ public:
     const double value;
 
     explicit DoubleLiteral(double value): value(value) {
-        valueType = Type::real;
+        valueType = MY_Type::real;
         isRangeType = false;
     }
 
@@ -227,8 +230,8 @@ public:
     const char literal;
 
     explicit CharLiteral(const char* literal): literal(literal[0]) {
-        valueType = Type::character;
-        rangeValue = (int)literal;
+        valueType = MY_Type::character;
+        rangeValue = (int)(this->literal);
     }
 
     string repr() override {
@@ -273,12 +276,12 @@ public:
     }
 };
 
-class ArrayRef: public Expression {
+class MyArrayRef: public Expression {
 public:
     Identifier* arrayName;
     Expression* index;
 
-    ArrayRef(Identifier* arrayName, Expression* index): arrayName(arrayName), index(index) {
+    MyArrayRef(Identifier* arrayName, Expression* index): arrayName(arrayName), index(index) {
         addChild(arrayName);
         addChild(index);
     }
@@ -287,6 +290,7 @@ public:
         return arrayName->repr() + "[" + index->repr() + "]";
     }
     llvm::Value* getRef(CodeGenContext& context);
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class UnaryOperator: public Expression {
@@ -303,12 +307,12 @@ public:
     }
 };
 
-class BinaryOperator: public Expression {
+class MyBinaryOperator: public Expression {
 public:
     OpType op;
     Expression *operand1, *operand2;
 
-    BinaryOperator(OpType op, Expression* op1, Expression* op2): op(op), operand1(op1), operand2(op2) {
+    MyBinaryOperator(OpType op, Expression* op1, Expression* op2): op(op), operand1(op1), operand2(op2) {
         addChild(operand1);
         addChild(operand2);
     }
@@ -337,6 +341,8 @@ public:
     string repr() override {
         return identifier->repr() + "(" + args->children[0]->repr() + "...)";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class Statement: public Node {
@@ -357,6 +363,12 @@ public:
     string repr() override {
         return "statement list";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override {
+        for (auto child: children) {
+            child->codeGen(context);
+        }
+    }
 };
 
 class GotoStmt: public Statement {
@@ -368,12 +380,16 @@ public:
     string repr() override {
         return "goto" + to_string(label);
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class CaseStmt: public Statement {
 public:
     Expression* expression;
     Statement* statement;
+
+    llvm::BasicBlock *bblock, *bexit;
 
     CaseStmt(Expression* ex, Statement* stmt): expression(ex), statement(stmt) {
         addChild(ex);
@@ -383,6 +399,8 @@ public:
     string repr() override {
         return "case " + expression->repr();
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class CaseStmtList: public Statement {
@@ -409,24 +427,30 @@ public:
     string repr() override {
         return "switch statement";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class ForStmt: public Statement {
 public:
     Identifier* variable;
     Expression *left, *right;
+    Statement* stmt;
     int direction; // 1 TO 0 DOWN
 
-    ForStmt(Identifier* id, Expression* ex1, Expression* ex2, int direction):
-            variable(id), left(ex1), right(ex2), direction(direction) {
+    ForStmt(Identifier* id, Expression* ex1, Expression* ex2, int direction, Statement* stmt):
+            variable(id), left(ex1), right(ex2), direction(direction), stmt(stmt) {
                 addChild(variable);
                 addChild(left);
                 addChild(right);
+                addChild(stmt);
             }
 
     string repr() override {
         return "for statement";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class WhileStmt: public Statement {
@@ -442,6 +466,8 @@ public:
     string repr() override {
         return "while statement";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class RepeatStmt: public Statement {
@@ -457,6 +483,8 @@ public:
     string repr() override {
         return "repeat statement";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class IfStmt: public Statement {
@@ -474,6 +502,8 @@ public:
     string repr() override {
         return "if statement";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class ProcCall: public Statement {
@@ -489,6 +519,8 @@ public:
     string repr() override {
         return "procedure call";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class AssignStmt: public Statement {
@@ -497,22 +529,22 @@ public:
     int leftType;// 1 ID 2 Array 3 Record
     string leftName;
 
-    AssignStmt(Identifier* left, Expression* right, int leftType):
-            left(left), right(right), leftType(leftType) {
+    AssignStmt(Identifier* left, Expression* right):
+            left(left), right(right), leftType(1) {
                 addChild(left);
                 addChild(right);
                 leftName = left->name;
             }
 
-    AssignStmt(ArrayRef* left, Expression* right, int leftType):
-            left(left), right(right), leftType(leftType) {
+    AssignStmt(MyArrayRef* left, Expression* right):
+            left(left), right(right), leftType(2) {
                 addChild(left);
                 addChild(right);
                 leftName = left->arrayName->name;
     }
 
-    AssignStmt(RecordRef* left, Expression* right, int leftType):
-            left(left), right(right), leftType(leftType) {
+    AssignStmt(RecordRef* left, Expression* right):
+            left(left), right(right), leftType(3) {
                 addChild(left);
                 addChild(right);
                 leftName = left->recordName->name;
@@ -545,25 +577,43 @@ public:
     RangeType* rangeType = nullptr;
     ArrayType* arrayType = nullptr;
     RecordType* recordType = nullptr;
-    int type; //0 sysType or user defined type 1 rangeType 2 ArrayType 3 RecordType
+    MY_Type type; //0 sysType or user defined type 1 rangeType 2 ArrayType 3 RecordType
 
-    explicit TypeDecl(string typeName): typeName(std::move(typeName)) { type = 0; }
-    explicit TypeDecl(const char* typeName): typeName(typeName) { type = 0; }
-    explicit TypeDecl(RangeType* rangeType): rangeType(rangeType) { type = 1; }
-    explicit TypeDecl(ArrayType* arrayType): arrayType(arrayType) { type = 2; }
-    explicit TypeDecl(RecordType* recordType): recordType(recordType)  { type = 3; }
+    explicit TypeDecl(string typeName): typeName(std::move(typeName)) {
+        if (typeName == "integer")
+            type = MY_Type::integer;
+        else if (typeName == "boolean")
+            type = MY_Type::boolean;
+        else if (typeName == "character")
+            type = MY_Type::character;
+    }
+    explicit TypeDecl(const char* typeName): typeName(typeName) {
+        if (typeName == "integer")
+            type = MY_Type::integer;
+        else if (typeName == "boolean")
+            type = MY_Type::boolean;
+        else if (typeName == "character")
+            type = MY_Type::character;
+    }
+    explicit TypeDecl(RangeType* rangeType): rangeType(rangeType) { type = MY_Type::range; }
+    explicit TypeDecl(ArrayType* arrayType): arrayType(arrayType) { type = MY_Type::array; }
+    explicit TypeDecl(RecordType* recordType): recordType(recordType)  { type = MY_Type::record; }
+    explicit TypeDecl(MY_Type type): type(type) {}
 
     string repr() override {
-        if (type == 0)
-            return "typedecl: " + typeName;
-        else if (type == 1)
+        if (type == MY_Type::range)
             return "range type";
-        else if (type == 2)
+        else if (type == MY_Type::array)
             return "array type";
-        else
+        else if (type == MY_Type::record)
             return "record type";
+        else
+            return "typedecl: " + typeName;
     }
 
+    llvm::Type* toLLvmType();
+
+    llvm::Value *codeGen(CodeGenContext& context) override {}
 };
 
 class RangeType: public Statement {
@@ -583,6 +633,8 @@ public:
         low = high = -1;
         type = 1;
     }
+
+    size_t size() { return static_cast<size_t>(high - low + 1); }
 
     string repr() override {
         if (type == 0)
@@ -606,6 +658,8 @@ public:
     string repr() override {
         return index->repr() + " " + arrayType->repr();
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override {}
 };
 
 class FieldDecl: public Statement {
@@ -679,8 +733,10 @@ class ConstDecl: public Statement {
 public:
     Identifier* name;
     ConstValue* value;
+    TypeDecl* type;
 
     ConstDecl(Identifier* name, ConstValue* value): name(name), value(value) {
+        type = new TypeDecl(value->valueType);
         addChild(name);
         addChild(value);
     }
@@ -717,6 +773,7 @@ class VarDecl: public Statement {
 public:
     NameList* names;
     TypeDecl* type;
+    bool isGlobal;
 
     VarDecl(NameList* names, TypeDecl* type): names(names), type(type) {
         addChild(names);
@@ -726,6 +783,9 @@ public:
     string repr() override {
         return "var " + names->repr() + " " + type->repr();
     }
+
+    llvm::Value *codeGen(string name, CodeGenContext& context);
+    llvm::Value *codeGen(CodeGenContext& context) override { return nullptr; }
 };
 
 class VarDeclList: public Statement {
@@ -738,6 +798,13 @@ public:
 
     string repr() override {
         return "var decl list";
+    }
+
+    llvm::Value *codeGen(CodeGenContext& context) override {
+        for (auto child: children) {
+            auto varDecl = (VarDecl*)child;
+            varDecl->codeGen(context);
+        }
     }
 };
 
@@ -765,6 +832,8 @@ public:
     string repr() override {
         return "Program";
     }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class Routine: public Program {
@@ -792,6 +861,12 @@ public:
     string repr() override {
         return "routine";
     }
+
+    bool isProcedure() {
+        return routineType == RoutineType::procedure;
+    }
+
+    llvm::Value *codeGen(CodeGenContext& context) override;
 };
 
 class RoutineList: public Node {
@@ -804,6 +879,13 @@ public:
 
     string repr() override {
         return "routine list";
+    }
+
+    llvm::Value *codeGen(CodeGenContext& context) override {
+        for (auto child: children) {
+            auto routine = (Routine*)child;
+            routine->codeGen(context);
+        }
     }
 };
 

@@ -10,6 +10,7 @@ extern "C" {
     extern int yylex(void);
 }
 Node *tree;
+Program* root;
 %}
 
 %union{
@@ -42,9 +43,9 @@ Node *tree;
 
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL FALSE TRUE MAXINT
-%token <string_value> ID
-%token <string_value>CHAR_LITERAL
-%token LP RP LB RB DOT COMMA COLON UL DIV PLUS MINUS GE GT LE LT
+%token <string_value> MY_ID STRING_LITERAL
+%token <string_value>CHAR_LITERAL BOOL_LITERAL
+%token MY_LP RP LB RB DOT COMMA COLON UL DIV PLUS MINUS GE GT MY_LE MY_LT
 %token EQUAL ASSIGN SEMI ELSE REPEAT THEN IF UNTIL NOT
 %token ARRAY WHILE SYS_CON MOD INTEGER PROGRAM RECORD
 %token GOTO FUNCTION CASE DOWNTO TO MUL PROCEDURE CONST DOTDOT
@@ -76,10 +77,10 @@ Node *tree;
 %type <AST_Program> routine_head routine program_head program
 
 %%
-program: program_head    routine DOT {$$ = $2;tree=$$;}
+program: program_head    routine DOT {$$ = $2;tree=$$; root=$$;}
     ;
 program_head:
-    PROGRAM ID  SEMI    {}
+    PROGRAM MY_ID  SEMI    {}
     | {}
     ;
 routine:
@@ -105,7 +106,7 @@ function_decl:
     }
     ;
 function_head:
-    FUNCTION    ID  parameters  COLON   simple_type_decl    {
+    FUNCTION    MY_ID  parameters  COLON   simple_type_decl    {
         $$ = new Routine(RoutineType::function, new Identifier($2), $3, $5);
     }
     ;
@@ -115,12 +116,12 @@ procedure_decl:
     }
     ;
 procedure_head:
-    PROCEDURE   ID  parameters  {
+    PROCEDURE   MY_ID  parameters  {
         $$ = new Routine(RoutineType::procedure, new Identifier($2), $3, nullptr);
     }
     ;
 parameters:
-    LP  para_decl_list  RP  { $$ = $2; }
+    MY_LP  para_decl_list  RP  { $$ = $2; }
     |      { $$ = new VarDeclList(); }
     ;
 para_decl_list:
@@ -210,15 +211,15 @@ array_type_decl:
 simple_type_decl:
     SYS_TYPE  { $$ = new TypeDecl($1); }  //这里的SYS_TYPE和NAME还是有问题的
     | NAME  { $$ = new TypeDecl($1); }
-    | LP name_list RP   {} //enum 先不写
+    | MY_LP name_list RP   {} //enum 先不写
     | INT_LITERAL   DOTDOT  INT_LITERAL { $$ = new TypeDecl(new RangeType($1, $3)); }
     | MINUS INT_LITERAL DOTDOT INT_LITERAL  { $$ = new TypeDecl(new RangeType(-$2, $4)); }
     | MINUS INT_LITERAL DOTDOT MINUS INT_LITERAL { $$ = new TypeDecl(new RangeType(-$2, -$5)); }
     | NAME  DOTDOT NAME { $$ = new TypeDecl(new RangeType($1, $3)); }
     ;
 name_list:
-    name_list   COMMA   ID  { $$->addChild(new Identifier($3)); }
-    | ID    { $$ = new NameList(new Identifier($1)); }
+    name_list   COMMA   MY_ID  { $$->addChild(new Identifier($3)); }
+    | MY_ID    { $$ = new NameList(new Identifier($1)); }
     ;
 compound_stmt:
     START   stmt_list   END { $$ = $2;}
@@ -243,19 +244,22 @@ non_label_stmt:
     | goto_stmt { $$ = $1; }
     ;
 assign_stmt:
-    ID  ASSIGN  expression { $$ = new AssignStmt(new Identifier($1), $3, 1);}
-    | ID LB expression RB ASSIGN expression {
-        $$ = new AssignStmt(new ArrayRef(new Identifier($1), $3), $6, 2);
+    MY_ID  ASSIGN  expression {
+        cout << "MY_ID: " << $1 << endl;
+        $$ = new AssignStmt(new Identifier($1), $3);
     }
-    | ID  DOT  ID  ASSIGN  expression {
-        $$ = new AssignStmt(new RecordRef(new Identifier($1), new Identifier($3)), $5, 3);
+    | MY_ID LB expression RB ASSIGN expression {
+        $$ = new AssignStmt(new MyArrayRef(new Identifier($1), $3), $6);
+    }
+    | MY_ID  DOT  MY_ID  ASSIGN  expression {
+        $$ = new AssignStmt(new RecordRef(new Identifier($1), new Identifier($3)), $5);
     }
     ;
-proc_stmt: ID  {}
-    | ID  LP  args_list  RP { $$ = new ProcCall(new Identifier($1), $3); }
+proc_stmt: MY_ID  {}
+    | MY_ID  MY_LP  args_list  RP { $$ = new ProcCall(new Identifier($1), $3); }
     | SYS_PROC { $$ = new ProcCall(new Identifier($1), nullptr); }
-    | SYS_PROC  LP  expression_list  RP { $$ = new ProcCall(new Identifier($1), $3); }
-    | READ  LP  factor  RP { $$ = new ProcCall(new Identifier($1), new ExpressionList($3)); }
+    | SYS_PROC  MY_LP  expression_list  RP { $$ = new ProcCall(new Identifier($1), $3); }
+    | READ  MY_LP  factor  RP { $$ = new ProcCall(new Identifier($1), new ExpressionList($3)); }
     ;
 if_stmt: 
     IF expression  THEN  stmt  else_clause {
@@ -274,11 +278,11 @@ while_stmt:
     WHILE  expression  DO stmt { $$ = new WhileStmt($2, $4); }
     ;
 for_stmt:
-    FOR  ID  ASSIGN  expression  TO  expression  DO stmt {
-        $$ = new ForStmt(new Identifier($2), $4, $6, 1);
+    FOR  MY_ID  ASSIGN  expression  TO  expression  DO stmt {
+        $$ = new ForStmt(new Identifier($2), $4, $6, 1, $8);
     }
-    | FOR  ID  ASSIGN  expression  DOWNTO  expression  DO stmt {
-        $$ = new ForStmt(new Identifier($2), $4, $6, 0);
+    | FOR  MY_ID  ASSIGN  expression  DOWNTO  expression  DO stmt {
+        $$ = new ForStmt(new Identifier($2), $4, $6, 0, $8);
     }
     ;
 case_stmt: 
@@ -290,7 +294,7 @@ case_expr_list:
     ;
 case_expr: 
     const_value  COLON  stmt  SEMI { $$ = new CaseStmt($1, $3); }
-    |  ID  COLON  stmt  SEMI { $$ = new CaseStmt(new Identifier($1), $3); }
+    |  MY_ID  COLON  stmt  SEMI { $$ = new CaseStmt(new Identifier($1), $3); }
     ;
 goto_stmt: 
     GOTO  INT_LITERAL { $$ = new GotoStmt($2); }
@@ -304,40 +308,40 @@ args_list:
     | expression { $$ = new ExpressionList($1); }
     ;
 expression: 
-    expression  GE  expr  {$$ = new BinaryOperator(OpType::ge, $1, $3); }
-    | expression  GT  expr  {$$ = new BinaryOperator(OpType::gt, $1, $3); }
-    | expression  LE  expr  {$$ = new BinaryOperator(OpType::le, $1, $3); }
-    | expression  LT  expr  {$$ = new BinaryOperator(OpType::lt, $1, $3); }
-    | expression  EQUAL  expr  {$$ = new BinaryOperator(OpType::eq, $1, $3); }
-    | expression  UNEQUAL  expr  {$$ = new BinaryOperator(OpType::ne, $1, $3); }
+    expression  GE  expr  {$$ = new MyBinaryOperator(OpType::ge, $1, $3); }
+    | expression  GT  expr  {$$ = new MyBinaryOperator(OpType::gt, $1, $3); }
+    | expression  MY_LE  expr  {$$ = new MyBinaryOperator(OpType::le, $1, $3); }
+    | expression  MY_LT  expr  {$$ = new MyBinaryOperator(OpType::lt, $1, $3); }
+    | expression  EQUAL  expr  {$$ = new MyBinaryOperator(OpType::eq, $1, $3); }
+    | expression  UNEQUAL  expr  {$$ = new MyBinaryOperator(OpType::ne, $1, $3); }
     | expr { $$ = $1; }
     ;
 expr: 
-    expr  PLUS  term  {$$ = new BinaryOperator(OpType::plus, $1, $3);}
-    | expr  MINUS  term  {$$ = new BinaryOperator(OpType::minus, $1, $3); }
-    | expr  OR  term  {$$ = new BinaryOperator(OpType::OP_OR, $1, $3); }
+    expr  PLUS  term  {$$ = new MyBinaryOperator(OpType::plus, $1, $3);}
+    | expr  MINUS  term  {$$ = new MyBinaryOperator(OpType::minus, $1, $3); }
+    | expr  OR  term  {$$ = new MyBinaryOperator(OpType::OP_OR, $1, $3); }
     | term { $$ = $1; }
     ;
 term: 
-    term  MUL  factor  {$$ = new BinaryOperator(OpType::mul, $1, $3); }
-    | term  DIV  factor  {$$ = new BinaryOperator(OpType::div, $1, $3); }
-    | term  MOD  factor  {$$ = new BinaryOperator(OpType::mod, $1, $3); }
-    | term  AND  factor  {$$ = new BinaryOperator(OpType::OP_AND, $1, $3); }
+    term  MUL  factor  {$$ = new MyBinaryOperator(OpType::mul, $1, $3); }
+    | term  DIV  factor  {$$ = new MyBinaryOperator(OpType::div, $1, $3); }
+    | term  MOD  factor  {$$ = new MyBinaryOperator(OpType::mod, $1, $3); }
+    | term  AND  factor  {$$ = new MyBinaryOperator(OpType::OP_AND, $1, $3); }
     | factor { $$ = $1; }
     ;
 factor: 
-    ID  { $$ = new Identifier($1);}
-    | NAME  LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
+    MY_ID  { $$ = new Identifier($1);}
+    | NAME  MY_LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
     | SYS_FUNCT { $$ = new FuncCall(new Identifier($1)); }
-    | SYS_FUNCT  LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
+    | SYS_FUNCT  MY_LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
     | const_value  { $$ = $1; }
-    | LP  expression  RP { $$ = $2; }
+    | MY_LP  expression  RP { $$ = $2; }
     | NOT  factor  { $$ = new UnaryOperator(OpType::OP_NOT, $2); }
     | MINUS  factor  {
                     $$ = new UnaryOperator(OpType::minus, $2);
                     }
-    | ID  LB  expression  RB { $$ = new ArrayRef(new Identifier($1), $3); }
-    | ID  DOT  ID {$$ = new RecordRef(new Identifier($1), new Identifier($3)); }
+    | MY_ID  LB  expression  RB { $$ = new MyArrayRef(new Identifier($1), $3); }
+    | MY_ID  DOT  MY_ID {$$ = new RecordRef(new Identifier($1), new Identifier($3)); }
     ;
 const_value:
     INT_LITERAL { $$ = new IntLiteral($1);}
@@ -354,15 +358,4 @@ int yyerror(char const *str)
         return 0;
 }
 
-int main(void)
-{
-        extern int yyparse(void);
-        extern FILE *yyin;
-        yyin = stdin;
-        if (yyparse()) {
-                fprintf(stderr, "Error!\n");
-                exit(1);
-        }
-        tree->printPascalTree(tree);
-}
 

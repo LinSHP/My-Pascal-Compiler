@@ -12,7 +12,7 @@ extern "C"
 %}
 
 %%
-"("     return LP;
+"("     return MY_LP;
 ")"     return RP;
 "["     return LB;
 "]"     return RB;
@@ -26,8 +26,8 @@ extern "C"
 "-"     return MINUS;
 ">="    return GE;
 ">"     return GT;
-"<="    return LE;
-"<"     return LT;
+"<="    return MY_LE;
+"<"     return MY_LT;
 "="     return EQUAL;
 "!="    return UNEQUAL;
 ":="     return ASSIGN;
@@ -55,8 +55,8 @@ extern "C"
 
 [a-zA-Z]([a-zA-Z0-9_])* {
 	yylval.string_value = yytext;
-	// cout << yytext << endl;
-    return ID;
+	cout << yytext << endl;
+    return MY_ID;
 }
 
 [0-9]+ {
