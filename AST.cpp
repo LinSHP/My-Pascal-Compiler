@@ -144,7 +144,6 @@ Value *MyBinaryOperator::codeGen(CodeGenContext &context) {
             default:
                 throw std::logic_error("not support binary type");
         }
-        return nullptr;
     }
 }
 
@@ -254,7 +253,7 @@ llvm::Value *Program::codeGen(CodeGenContext &context) {
         std::cout << "Generating code for " << typeid(routine).name() << std::endl;
         last = routine->codeGen(context);
     }
-    // deal with program statements
+
     for (auto stmt: routineBody->children)
         stmt->codeGen(context);
     std::cout << "Creating program" << endl;

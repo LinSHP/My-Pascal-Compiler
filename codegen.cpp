@@ -17,47 +17,36 @@ llvm::Function* createPrintf(CodeGenContext& context) {
     return func;
 }
 
-/* Compile the AST into a module */
 void CodeGenContext::generateCode(Program& root)
 {
 
     std::cout << "Generating code...\n";
 
-    /* Create the top level interpreter function to call as entry */
     std::vector<Type*> argTypes;
     FunctionType *ftype = FunctionType::get(Type::getVoidTy(llvmContext), makeArrayRef(argTypes), false);
-    // change GlobalValue::InternalLinkage into ExternalLinkage
     mainFunction = Function::Create(ftype, GlobalValue::ExternalLinkage, "main", module);
     BasicBlock *bblock = BasicBlock::Create(llvmContext, "entry", mainFunction, 0);
 
     CodeGenContext::printf = createPrintf(*this);
 
-    /* Push a new variable/block context */
     pushBlock(bblock);
     currentFunction = mainFunction;
     for (auto label:labels){
         labelBlock[label]=BasicBlock::Create(llvmContext, "label", mainFunction, 0);
     }
-    root.codeGen(*this); /* emit bytecode for the toplevel block */
+    root.codeGen(*this);
     ReturnInst::Create(llvmContext, currentBlock());
     popBlock();
-    // popBlock();
 
-    /* Print the bytecode in a human-readable format
-       to see if our program compiled properly
-     */
     std::cout << "Code is generated.\n";
     legacy::PassManager pm;
     pm.add(createPrintModulePass(outs()));
-    //pm.run(*module);
 
-    // write IR to stderr
     std::cout<<"code is gen~~~\n";
     module->print(llvm::errs(), nullptr);
     std::cout<<"code is gen~!~\n";
 }
 
-/* Executes the AST by running the main function */
 GenericValue CodeGenContext::runCode() {
     std::cout << "Running begining...\n";
     std::cout <<

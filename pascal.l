@@ -30,7 +30,7 @@ extern "C"
 "<"     return MY_LT;
 "="     return EQUAL;
 "!="    return UNEQUAL;
-":="     { cout << yytext << endl; return ASSIGN; }
+":="     { return ASSIGN; }
 "~"     return NOT;
 ";"     return SEMI;
 "begin" return START;
@@ -50,17 +50,17 @@ extern "C"
 "program" return PROGRAM;
 "if"    return IF;
 "function" return FUNCTION;
-"boolean"|"char"|"integer"|"real"|"longint"    { yylval.string_value = strdup(yytext); return SYS_TYPE;}
+"boolean"|"char"|"integer"|"real"|"longint" {
+    yylval.string_value = strdup(yytext); return SYS_TYPE;
+}
 
 ([_a-zA-Z])([_a-zA-Z0-9])* {
 	yylval.string_value = strdup(yytext);
-	cout << yytext << endl;
     return MY_ID;
 }
 
 [0-9]+ {
     yylval.int_value = atoi(yytext);
-    // cout<<"int"<<endl;
     return INT_LITERAL;
 
 }

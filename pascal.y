@@ -82,7 +82,7 @@ Program* root;
 program: program_head    routine DOT {$$ = $2;tree=$$; root=$$;}
     ;
 program_head:
-    PROGRAM MY_ID  SEMI    { cout << $2 << endl;}
+    PROGRAM MY_ID  SEMI    {}
     | {}
     ;
 routine:
@@ -98,7 +98,7 @@ routine_head:
     }
     ;
 routine_part:
-    routine_part    function_decl   { $$->addChild($2);cout<<"routine part"<<endl;}
+    routine_part    function_decl   { $$->addChild($2);}
     | routine_part  procedure_decl  { $$->addChild($2);}
     | { $$ = new RoutineList();}
     ;
@@ -213,7 +213,6 @@ array_type_decl:
     ;
 simple_type_decl:
     SYS_TYPE  {
-        cout << "SYS_TYPE: " << $1 << endl;
         $$ = new TypeDecl($1);
     }  //这里的SYS_TYPE和NAME还是有问题的
     | NAME  { $$ = new TypeDecl($1); }
@@ -251,7 +250,6 @@ non_label_stmt:
     ;
 assign_stmt:
     MY_ID  ASSIGN  expression {
-        cout << "MY_ID: " <<  $1 << endl;
         $$ = new AssignStmt(new Identifier($1), $3);
     }
     | MY_ID LB expression RB ASSIGN expression {
@@ -340,7 +338,6 @@ term:
 factor: 
     MY_ID  {
         $$ = new Identifier($1);
-        cout << $1 << endl;
     }
     | NAME  MY_LP  args_list  RP  { $$ = new FuncCall(new Identifier($1), $3); }
     | SYS_FUNCT { $$ = new FuncCall(new Identifier($1)); }
